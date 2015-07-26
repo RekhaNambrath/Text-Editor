@@ -1,0 +1,129 @@
+import sys
+from PyQt4 import QtGui
+
+def main():
+	app=QtGui.QApplication(sys.argv)
+	writr=Writer()
+	sys.exit(app.exec_())
+
+class Writer(QtGui.QMainWindow):
+	
+	def __init__(self,parent=None):
+		super(Writer,self).__init__()
+		self.filename = ""	
+		self.initUI()
+	def initToolbar(self):
+		self.toolbar=self.addToolBar("Options")
+		self.addToolBarBreak()
+		
+		self.newAction = QtGui.QAction(QtGui.QIcon("newfile.png"),"New",self)
+  		self.newAction.setStatusTip("Create a new document from scratch.")
+  		self.newAction.setShortcut("Ctrl+N")
+  		self.newAction.triggered.connect(self.new)
+
+  		self.openAction = QtGui.QAction(QtGui.QIcon("open.png"),"Open file",self)
+  		self.openAction.setStatusTip("Open existing document")
+  		self.openAction.setShortcut("Ctrl+O")
+  		self.openAction.triggered.connect(self.open)
+
+  		self.saveAction = QtGui.QAction(QtGui.QIcon("Save.png"),"Save",self)
+  		self.saveAction.setStatusTip("Save document")
+  		self.saveAction.setShortcut("Ctrl+S")
+  		self.saveAction.triggered.connect(self.save)
+		
+		self.toolbar.addAction(self.newAction)
+  		self.toolbar.addAction(self.openAction)
+  		self.toolbar.addAction(self.saveAction)
+		self.toolbar.addSeparator()
+		self.toolbar.addAction(self.printAction)
+		self.toolbar.addAction(self.previewAction)
+		self.toolbar.addSeparator()
+
+		self.printAction = QtGui.QAction(QtGui.QIcon("icons/print.png"),"Print document",self)
+    		self.printAction.setStatusTip("Print document")
+    		self.printAction.setShortcut("Ctrl+P")
+    		self.printAction.triggered.connect(self.print)
+
+    		self.previewAction = QtGui.QAction(QtGui.QIcon("icons/preview.png"),"Page view",self)
+    		self.previewAction.setStatusTip("Preview page before printing")
+    		self.previewAction.setShortcut("Ctrl+Shift+P")
+    		self.previewAction.triggered.connect(self.preview)
+	def initFormatbar(self):
+		self.formatbar=self.addToolBar("Format")
+	def initMenubar(self):
+		menubar=self.menuBar()
+		file=menubar.addMenu("File")
+		edit=menubar.addMenu("Edit")
+		view=menubar.addMenu("View")
+		file.addAction(self.newAction)
+    		file.addAction(self.openAction)
+    		file.addAction(self.saveAction)
+		file.addAction(self.printAction)
+		file.addAction(self.previewAction)
+	def setTooltip(self,btn):
+		QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
+        	self.setToolTip('This is a <b>QWidget</b> widget')
+        	btn.setToolTip('This is a <b>QPushButton</b> widget')
+           
+	def closeEvent(self,event):
+		reply=QtGui.QMessageBox.question(self, 'Message', "Are you sure to quit?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+		if reply == QtGui.QMessageBox.Yes:
+           		event.accept()
+        	else:
+            		event.ignore()        
+        
+	def initUI(self):
+		self.text=QtGui.QTextEdit(self)
+		self.setCentralWidget(self.text)
+		self.initToolbar()
+		self.initFormatbar()
+		self.initMenubar()
+		self.statusbar=self.statusBar()
+		self.setGeometry(100,100,1000,500)
+		self.setWindowTitle('Writer')
+		self.setWindowIcon(QtGui.QIcon('writer.png'))
+		self.show()
+	
+	def new(self):
+	        spawn = Writer()
+	   	spawn.show()
+
+    	def open(self):
+
+        # Get filename and show only .writer files
+        	self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File',".","(*.writer)")
+        	if self.filename:
+            		with open(self.filename,"rt") as file:
+                		self.text.setText(file.read())
+
+    	def save(self):
+
+        # Only open dialog if there is no filename yet
+        	if not self.filename:
+            		self.filename = QtGui.QFileDialog.getSaveFileName(self, 'Save File')
+
+        # Append extension if not there yet
+        	if not self.filename.endsWith(".writer"):
+            		self.filename += ".writer"
+
+        # We just store the contents of the text file along with the
+        # format in html, which Qt does in a very nice way for us
+      	        with open(self.filename,"wt") as file:
+           		 file.write(self.text.toHtml())
+	
+	def preview(self):
+        # Open preview dialog
+        	preview = QtGui.QPrintPreviewDialog()
+
+        # If a print is requested, open print dialog
+        	preview.paintRequested.connect(lambda p: self.text.print_(p))
+        	preview.exec_()
+
+        def print(self):
+        # Open printing dialog
+       		dialog = QtGui.QPrintDialog()
+	        if dialog.exec_() == QtGui.QDialog.Accepted:
+        	self.text.document().print_(dialog.printer())
+
+if __name__=='__main__':
+	main()
